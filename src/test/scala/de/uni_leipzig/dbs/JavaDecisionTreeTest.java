@@ -1,6 +1,7 @@
 package de.uni_leipzig.dbs;
 
 import de.uni_leipzig.dbs.api.java.DecisionTree;
+import de.uni_leipzig.dbs.api.java.DecisionTreeBuilder;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -28,7 +29,12 @@ public class JavaDecisionTreeTest {
 
 
         DataSet<Tuple2<Double, Vector<Double>>> dataLV = data.map(new RawDataToInput());
-        DecisionTree model = new DecisionTree().fit(dataLV);
+        DecisionTree model = new DecisionTreeBuilder()
+                .setMaxDepth(3)
+                .setMinLeafSamples(50)
+                .setMinSplitGain(0.1)
+                .build()
+                .fit(dataLV);
 
         DataSet<Vector<Double>> dataV = dataLV.map(new LabelVectorToVector());
         DataSet<Tuple2<Double, Vector<Double>>> predictedData = model.predict(dataV);
