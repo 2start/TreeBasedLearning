@@ -1,7 +1,12 @@
 package de.uni_leipzig.dbs
 import org.apache.flink.api.scala._
 
-class DecisionTreeModel extends Evaluatable with Serializable {
+class DecisionTreeModel(
+                         val maxDepth: Int = Int.MaxValue,
+                         val minLeafSamples: Int = 1,
+                         val minSplitGain: Double = 0
+                       ) extends Evaluatable with Serializable{
+
   var rootNode: Node = null
 
   def fit(data: DataSet[(Double, Vector[Double])]): DecisionTreeModel = {

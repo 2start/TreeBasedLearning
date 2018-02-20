@@ -9,7 +9,14 @@ import org.apache.flink.api.java.tuple.{Tuple2 => JavaTuple2}
 
 import scala.collection.JavaConverters._
 
-class DecisionTree {
+class DecisionTree(
+                    val maxDepth: Int = Int.MaxValue,
+                    val minLeafSamples: Int = 1,
+                    val minSplitGain: Double = 0
+                  ) {
+
+  // necessary for java api
+  def this() = this(Int.MaxValue, 1, 0.0)
 
   var model: DecisionTreeModel = _
 
