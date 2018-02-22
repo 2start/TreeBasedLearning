@@ -1,4 +1,4 @@
-package de.uni_leipzig.dbs
+package de.uni_leipzig.dbs.api.java
 
 import org.apache.flink.api.scala.DataSet
 

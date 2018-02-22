@@ -1,4 +1,4 @@
-package de.uni_leipzig.dbs
+package de.uni_leipzig.dbs.decisiontree
 
 import org.apache.flink.api.scala._
 import org.apache.flink.api.scala.extensions._

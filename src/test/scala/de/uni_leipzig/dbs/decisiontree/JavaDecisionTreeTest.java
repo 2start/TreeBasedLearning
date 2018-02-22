@@ -1,4 +1,4 @@
-package de.uni_leipzig.dbs;
+package de.uni_leipzig.dbs.decisiontree;
 
 import de.uni_leipzig.dbs.api.java.DecisionTree;
 import de.uni_leipzig.dbs.api.java.DecisionTreeBuilder;

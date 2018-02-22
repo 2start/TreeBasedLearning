@@ -1,6 +1,6 @@
 package de.uni_leipzig.dbs.api.java
 
-import de.uni_leipzig.dbs.{DecisionTreeModel, Util}
+import de.uni_leipzig.dbs.decisiontree.DecisionTreeModel
 import org.apache.flink.api.java.{DataSet => JavaDataSet}
 import org.apache.flink.api.scala._
 import org.apache.flink.api.scala.extensions._

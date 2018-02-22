@@ -1,4 +1,4 @@
-package de.uni_leipzig.dbs
+package de.uni_leipzig.dbs.decisiontree
 
 case class Entropy(
                 val totalCount: Long,
