@@ -88,9 +88,7 @@ class DecisionTreeTrainer(
     val lowerEntropy = minFeatureEntropy._2
     val upperEntropy = minFeatureEntropy._3
     val splitFeatureIndex = minFeatureEntropy._1
-    val splitEntropy = 1/2 * lowerEntropy.entropy + 1/2 * upperEntropy.entropy
-    val lowerCount = lowerEntropy.totalCount
-    val upperCount = lowerEntropy.totalCount
+    val splitEntropy = lowerEntropy.totalCount/(lowerEntropy.totalCount + upperEntropy.totalCount) * lowerEntropy.entropy + upperEntropy.totalCount/(lowerEntropy.totalCount + upperEntropy.totalCount) * upperEntropy.entropy
     val median = featureMedianMap(splitFeatureIndex)
     val prediction = entropy.labelCountMap.maxBy{case(label, count) => count}._1
     val predicitonProbability = entropy.labelCountMap(prediction).toDouble/entropy.totalCount.toDouble
