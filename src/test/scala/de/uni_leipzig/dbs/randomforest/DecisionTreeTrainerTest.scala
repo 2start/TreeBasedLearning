@@ -17,7 +17,7 @@ class DecisionTreeTrainerTest extends FlatSpec with Matchers {
 
   "A decisionTreeTrainer" should "produce the right tree" in {
     val decisionTreeTrainer = new DecisionTreeTrainer()
-    val tree = decisionTreeTrainer.train(lfList1)
+    val tree = decisionTreeTrainer.createTree(lfList1)
     println(tree)
   }
 }

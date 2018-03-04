@@ -80,9 +80,11 @@ class DecisionTreeTrainer(
     return node
   }
 
-  def train(labeledFeaturesList: List[LabeledFeatures]): Node = {
+  def createTree(labeledFeaturesList: List[LabeledFeatures]): Node = {
     val rootNodeStats = NodeStatistics(labeledFeaturesList.map(lf => lf.label).groupBy(identity).mapValues(_.size))
     val rootNode = new Node(1, rootNodeStats, None)
     return splitNode(labeledFeaturesList, rootNode)
   }
+
+
 }

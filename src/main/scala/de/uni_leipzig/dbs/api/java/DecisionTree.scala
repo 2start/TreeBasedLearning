@@ -1,6 +1,7 @@
 package de.uni_leipzig.dbs.api.java
 
 import de.uni_leipzig.dbs.decisiontree.DecisionTreeModel
+import de.uni_leipzig.dbs.tree.Node
 import org.apache.flink.api.java.{DataSet => JavaDataSet}
 import org.apache.flink.api.scala._
 import org.apache.flink.api.scala.extensions._
@@ -19,7 +20,9 @@ class DecisionTree(
   def this() = this(Int.MaxValue, 1, 0.0)
 
   var model: DecisionTreeModel = _
-
+  def getRootNode: Node = {
+    model.rootNode
+  }
   def fit(javaData: JavaDataSet[JavaTuple2[java.lang.Double, java.util.Vector[java.lang.Double]]]): DecisionTree = {
     val data = Util.javaDataSetToScalaDataSet(javaData).map(t => {
       val d = t.f0.toDouble

@@ -38,12 +38,8 @@ public class JavaDecisionTreeTest {
         DataSet<Vector<Double>> dataV = dataLV.map(new LabelVectorToVector());
         DataSet<Tuple2<Double, Vector<Double>>> predictedData = model.predict(dataV);
 
-        model.evaluate(dataLV).print();
         System.out.println("(Accuracy, Precision, Recall): " + model.evaluateBinaryClassification(dataLV));
-
-        // *************************************************************************
-        //     USER FUNCTIONS
-        // *************************************************************************
+        System.out.println(model.getRootNode());
 
     }
 
