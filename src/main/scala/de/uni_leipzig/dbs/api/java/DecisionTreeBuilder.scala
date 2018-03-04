@@ -10,7 +10,7 @@ class DecisionTreeBuilder {
     this.maxDepth = maxDepth.intValue()
     return this
   }
-  def setMinLeafSamples(minLeafSample: java.lang.Integer): DecisionTreeBuilder = {
+  def setMinLeafSamples(minLeafSamples: java.lang.Integer): DecisionTreeBuilder = {
     this.minLeafSamples = minLeafSamples.intValue()
     return this
   }
