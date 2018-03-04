@@ -29,6 +29,9 @@ public class JavaDecisionTreeTest {
 
         DataSet<Tuple2<Double, Vector<Double>>> dataLV = data.map(new RawDataToInput());
         DecisionTree model = new DecisionTreeBuilder()
+                .setMinSplitGain(0.0)
+                .setMinLeafSamples(50)
+                .setMaxDepth(10)
                 .build()
                 .fit(dataLV);
 
