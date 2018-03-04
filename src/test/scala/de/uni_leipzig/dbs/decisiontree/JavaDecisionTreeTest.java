@@ -18,8 +18,7 @@ public class JavaDecisionTreeTest {
 
         // emulates local environment on java collections for improved performance
         ExecutionEnvironment env = ExecutionEnvironment.createCollectionsEnvironment();
-        //ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-
+//        ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
         String filepath = URLDecoder.decode(JavaDecisionTreeTest.class.getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_4].csv").toURI().getPath(), "UTF-8");
         DataSet<Tuple4<Boolean, Double, Double, Double>> data = env.readCsvFile(filepath)
                 .ignoreFirstLine()
@@ -30,9 +29,6 @@ public class JavaDecisionTreeTest {
 
         DataSet<Tuple2<Double, Vector<Double>>> dataLV = data.map(new RawDataToInput());
         DecisionTree model = new DecisionTreeBuilder()
-                .setMaxDepth(3)
-                .setMinLeafSamples(50)
-                .setMinSplitGain(0.1)
                 .build()
                 .fit(dataLV);
 
@@ -41,8 +37,6 @@ public class JavaDecisionTreeTest {
 
         model.evaluate(dataLV).print();
         System.out.println("(Accuracy, Precision, Recall): " + model.evaluateBinaryClassification(dataLV));
-
-
 
         // *************************************************************************
         //     USER FUNCTIONS

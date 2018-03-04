@@ -11,8 +11,9 @@ class DecisionTreeTest extends FlatSpec with Matchers {
   behavior of "a decision tree"
 
   it should "not throw an error" in {
-    val filepathTraining = URLDecoder.decode(getClass().getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_4].csv").toURI().toString, "UTF-8")
+    val filepathTraining = URLDecoder.decode(getClass().getResource("/musicbrainz/debug2.csv").toURI().toString, "UTF-8")
     val env = ExecutionEnvironment.getExecutionEnvironment
+    env.setParallelism(4)
     val inputFull: DataSet[(Int, Int, Boolean, Double, Double, Double)] = env.readCsvFile(filepathTraining, fieldDelimiter = ";", ignoreFirstLine = true)
     val input = inputFull
 
@@ -22,11 +23,11 @@ class DecisionTreeTest extends FlatSpec with Matchers {
       }, Vector(t._4, t._5, t._6))
     })
 
-    val model = new DecisionTreeModel fit(data)
+    val model = new DecisionTreeModel() fit(data)
+    println(model.rootNode)
 
 
-
-    val filepathTest = URLDecoder.decode(getClass().getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_4].csv").toURI().toString, "UTF-8")
+    val filepathTest = URLDecoder.decode(getClass().getResource("/musicbrainz/debug2.csv").toURI().toString, "UTF-8")
     val testFull: DataSet[(Int, Int, Boolean, Double, Double, Double)] = env.readCsvFile(filepathTest, fieldDelimiter = ";", ignoreFirstLine = true)
     val test = testFull
 
@@ -41,6 +42,27 @@ class DecisionTreeTest extends FlatSpec with Matchers {
 
 
 
+
+  }
+
+  it should "build the right tree" in {
+
+    val lfList1 = (1.0, Vector(1.0,1.0)) ::
+      (1.0, Vector(1.0,2.0)) ::
+      (1.0, Vector(2.0,1.0)) ::
+      (1.0, Vector(2.0,4.0)) ::
+      (2.0, Vector(6.0,5.0)) ::
+      (2.0, Vector(5.0,6.0)) ::
+      (2.0, Vector(8.0,6.0)) ::
+      (3.0, Vector(11.0,20.0)) ::
+      (3.0, Vector(8.0,8.0)) ::
+      (3.0, Vector(8.0, 10.0)) :: Nil
+
+    val env = ExecutionEnvironment.getExecutionEnvironment
+    val data = env.fromCollection(lfList1)
+
+    val model = new DecisionTreeModel().fit(data)
+    println(model.rootNode)
 
   }
 }

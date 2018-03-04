@@ -1,17 +1,18 @@
 package de.uni_leipzig.dbs.decisiontree
 
+import de.uni_leipzig.dbs.tree.Node
 import org.apache.flink.api.scala._
 
 class DecisionTreeModel(
                          val maxDepth: Int = Int.MaxValue,
                          val minLeafSamples: Int = 1,
-                         val minSplitGain: Double = 0
+                         val minImpurityDecrease: Double = 0
                        ) extends Evaluatable with Serializable{
 
   var rootNode: Node = null
 
   def fit(data: DataSet[(Double, Vector[Double])]): DecisionTreeModel = {
-    val dtt = new DecisionTreeTrainer
+    val dtt = new DecisionTreeTrainer(maxDepth = maxDepth, minLeafSamples = minLeafSamples, minImpurityDecrease = minImpurityDecrease)
     rootNode = dtt.createTree(data)
     this
   }
