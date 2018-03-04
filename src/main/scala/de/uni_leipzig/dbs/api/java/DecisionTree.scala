@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
 class DecisionTree(
                     val maxDepth: Int = Int.MaxValue,
                     val minLeafSamples: Int = 1,
-                    val minSplitGain: Double = 0
+                    val minImpurityDecrease: Double = 0.0
                   ) {
 
   // necessary for java api
@@ -29,7 +29,7 @@ class DecisionTree(
       val vec = t.f1.asScala.toVector.map(x => x.doubleValue())
       (d, vec)
     })
-    model = new DecisionTreeModel fit(data)
+    model = new DecisionTreeModel(this.maxDepth, this.minLeafSamples, this.minImpurityDecrease) fit(data)
     return this
   }
 
