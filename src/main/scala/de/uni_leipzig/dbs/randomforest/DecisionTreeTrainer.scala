@@ -7,19 +7,20 @@ import scala.util.Random
 class DecisionTreeTrainer(
                            val minImpurityDecrease: Double = 0.0,
                            val minLeafSamples: Int = 1,
-                           val featuresPerSplit: Int = 2,
+                           val featuresPerSplit: Int = 1,
                            val maxDepth: Int = Int.MaxValue
-                         ) {
+                         ) extends Serializable {
   def splitNode(labeledFeaturesList: List[LabeledFeatures], leaf: Node): Node = {
     require(labeledFeaturesList.nonEmpty)
-
+    require(featuresPerSplit <= labeledFeaturesList.head.features.length)
+    // get random feature subset and create mapping from new to old feature
     val featureSize = labeledFeaturesList.head.features.size
-    val filteredFeatures = Random.shuffle(Vector.range(0, featureSize)).take(featuresPerSplit)
-
+    val randFeatureOrder = Random.shuffle(Vector.range(0, featureSize))
+    val filteredFeaturesNewToOld = randFeatureOrder.indices map (i => (i, randFeatureOrder(i))) toMap
+    val filteredFeatures =  filteredFeaturesNewToOld.values.take(featuresPerSplit).toVector
     val filteredLabeledFeaturesList = labeledFeaturesList.map(_.filterFeatures(filteredFeatures))
 
-
-    val splitStats = 0 until featureSize map (i => {
+    val splitStats = 0 until featuresPerSplit map (i => {
       val labelFeatureList = filteredLabeledFeaturesList.map(lf => (lf.label, lf.features(i)))
       val sortedLabelFeatureList = labelFeatureList.sortBy(_._2)
       val size = sortedLabelFeatureList.size
@@ -68,13 +69,13 @@ class DecisionTreeTrainer(
       return leaf
     }
 
-
-    val lowerNodeData = labeledFeaturesList.filter(lf => lf.features(splitFeatureIndex) <= median)
-    val upperNodeData = labeledFeaturesList.filter(lf => lf.features(splitFeatureIndex) > median)
+    val splitFeatureIndexOldData = filteredFeaturesNewToOld(splitFeatureIndex)
+    val lowerNodeData = labeledFeaturesList.filter(lf => lf.features(splitFeatureIndexOldData) <= median)
+    val upperNodeData = labeledFeaturesList.filter(lf => lf.features(splitFeatureIndexOldData) > median)
     val lowerNode = splitNode(lowerNodeData, lowerLeaf)
     val upperNode = splitNode(upperNodeData, upperLeaf)
 
-    val split = Split(lowerNode, upperNode, splitFeatureIndex, median)
+    val split = Split(lowerNode, upperNode, filteredFeaturesNewToOld(splitFeatureIndex), median)
     val node = new Node(leaf.id, leaf.stats, Some(split))
 
     return node
