@@ -24,7 +24,7 @@ class DecisionTree(
   def getRootNode: Node = {
     model.rootNode
   }
-  var x = 1
+  
   def fit(javaData: JavaDataSet[JavaTuple2[java.lang.Double, java.util.Vector[java.lang.Double]]]): DecisionTree = {
     val data = Util.javaDataSetToScalaDataSet(javaData).map(t => {
       val label = t.f0.toDouble
