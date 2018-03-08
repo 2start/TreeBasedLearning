@@ -26,12 +26,15 @@ class RandomForest(
       val features = t.f1.asScala.toVector.map(x => x.doubleValue())
       LabeledFeatures(label, features)
     })
-    val model = new RandomForestModel(sampleFraction, numTrees, minImpurityDecrease, minLeafSamples, maxDepth, featuresPerSplit)
+    this.model = new RandomForestModel(sampleFraction, numTrees, minImpurityDecrease, minLeafSamples, maxDepth, featuresPerSplit)
     model fit data
     return this
   }
 
   def predict(javaData: JavaDataSet[java.util.Vector[java.lang.Double]]): JavaDataSet[JavaTuple2[java.lang.Double, java.util.Vector[java.lang.Double]]] = {
+    if(model == null) {
+      throw new IllegalAccessError("Model has to be trained before trying to predict.")
+    }
     val data = Util.javaDataSetToScalaDataSet(javaData).map(javaVec => javaVec.asScala.toVector.map(x => x.doubleValue()))
     val predictionData = model.predict(data)
     val tempData = predictionData.mapWith{case(label, features) => {
