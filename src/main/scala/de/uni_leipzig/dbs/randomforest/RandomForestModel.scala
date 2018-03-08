@@ -1,33 +1,30 @@
 package de.uni_leipzig.dbs.randomforest
 
-import java.net.URLDecoder
-
-import de.uni_leipzig.dbs.decisiontree.Evaluatable
+import de.uni_leipzig.dbs.Evaluatable
 import de.uni_leipzig.dbs.tree.Node
-import org.apache.flink.api.common.functions.{FlatMapFunction, RichFlatMapFunction}
+import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.scala._
-import org.apache.flink.configuration.Configuration
-import org.apache.flink.util.Collector
 import org.apache.flink.api.scala.extensions._
+import org.apache.flink.util.Collector
 //import org.apache.flink.api.scala.utils.DataSetUtils
 
 class RandomForestModel(
-                  val sampleFraction: Double = 0.05,
-                  val numTrees: Int = 100,
-                  val minImpurityDecrease: Double = 0.00,
-                  val minLeafSamples: Int = 1,
-                  val maxDepth: Int = Int.MaxValue,
-                  val featuresPerSplit: Int = 1
-                  ) extends Evaluatable with Serializable {
+                         val sampleFraction: Double = 0.05,
+                         val numTrees: Int = 100,
+                         val minImpurityDecrease: Double = 0.00,
+                         val minLeafSamples: Int = 1,
+                         val maxDepth: Int = Int.MaxValue,
+                         val featuresPerSplit: Int = 1
+                       ) extends Evaluatable with Serializable {
   var trees: List[Node] = _
 
   def fit(data: DataSet[LabeledFeatures]): Unit = {
     val dt = new DecisionTreeTrainer(minImpurityDecrease, minLeafSamples, featuresPerSplit, maxDepth)
     trees = data
       .flatMap(new Bootstrapper(sampleFraction, numTrees))
-      .groupingBy{case(tree, labeledFeatures) => tree}
+      .groupingBy { case (tree, labeledFeatures) => tree }
       .reduceGroup(it => {
-        val labeledFeaturesList = it.toList.map{case(tree, labeledFeatures) => labeledFeatures}
+        val labeledFeaturesList = it.toList.map { case (tree, labeledFeatures) => labeledFeatures }
         val rootNode = dt.createTree(labeledFeaturesList)
         rootNode
       }).collect().toList
@@ -51,9 +48,9 @@ class RandomForestModel(
 
 class Bootstrapper(fraction: Double, numTrees: Int) extends RichFlatMapFunction[LabeledFeatures, (Int, LabeledFeatures)] {
   override def flatMap(in: LabeledFeatures, collector: Collector[(Int, LabeledFeatures)]): Unit = {
-    1 to numTrees map {tree =>
+    1 to numTrees map { tree =>
       val rnd = math.random
-      if(rnd <= fraction) {
+      if (rnd <= fraction) {
         collector.collect((tree, in))
       }
     }

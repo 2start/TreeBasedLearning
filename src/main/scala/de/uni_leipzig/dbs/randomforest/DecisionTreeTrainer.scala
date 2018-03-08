@@ -17,7 +17,7 @@ class DecisionTreeTrainer(
     val featureSize = labeledFeaturesList.head.features.size
     val randFeatureOrder = Random.shuffle(Vector.range(0, featureSize))
     val filteredFeaturesNewToOld = randFeatureOrder.indices map (i => (i, randFeatureOrder(i))) toMap
-    val filteredFeatures =  filteredFeaturesNewToOld.values.take(featuresPerSplit).toVector
+    val filteredFeatures = filteredFeaturesNewToOld.values.take(featuresPerSplit).toVector
     val filteredLabeledFeaturesList = labeledFeaturesList.map(_.filterFeatures(filteredFeatures))
 
     val splitStats = 0 until featuresPerSplit map (i => {
@@ -40,7 +40,7 @@ class DecisionTreeTrainer(
     })
 
     val minFeatureEntropy = splitStats
-      .map {case (featureIndex, lowerStats, upperStats, median) => {
+      .map { case (featureIndex, lowerStats, upperStats, median) => {
         val totalCount = lowerStats.count + upperStats.count
         val lowerWeightedEntropy = (lowerStats.count.toDouble / totalCount) * lowerStats.entropy
         val upperWeightedEntropy = (upperStats.count.toDouble / totalCount) * upperStats.entropy
@@ -50,22 +50,22 @@ class DecisionTreeTrainer(
       }
       .minBy(_._4)
 
-    val(splitFeatureIndex, lowerStats, upperStats, splitEntropy, median) = minFeatureEntropy
+    val (splitFeatureIndex, lowerStats, upperStats, splitEntropy, median) = minFeatureEntropy
 
-    val lowerLeaf = new Node(leaf.id*2, lowerStats, None)
-    val upperLeaf = new Node(leaf.id*2 + 1, upperStats, None)
+    val lowerLeaf = new Node(leaf.id * 2, lowerStats, None)
+    val upperLeaf = new Node(leaf.id * 2 + 1, upperStats, None)
 
-    if(lowerLeaf.stats.count < minLeafSamples || upperLeaf.stats.count < minLeafSamples) {
+    if (lowerLeaf.stats.count < minLeafSamples || upperLeaf.stats.count < minLeafSamples) {
       return leaf
     }
 
-    val depth = (math.log(leaf.id)/math.log(2)).toInt
-    if(depth == maxDepth) {
+    val depth = (math.log(leaf.id) / math.log(2)).toInt
+    if (depth == maxDepth) {
       return leaf
     }
 
     val informationGain = leaf.stats.entropy - splitEntropy
-    if(informationGain <= minImpurityDecrease) {
+    if (informationGain <= minImpurityDecrease) {
       return leaf
     }
 

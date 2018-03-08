@@ -12,26 +12,32 @@ class RandomForestBuilder {
     this.sampleFraction = sampleFraction
     this
   }
+
   def setNumTrees(numTrees: Int): RandomForestBuilder = {
     this.numTrees = numTrees
     this
   }
+
   def setMinImpurityDecrease(minImpurityDecrease: Double): RandomForestBuilder = {
     this.minImpurityDecrease = minImpurityDecrease
     this
   }
+
   def setMinLeafSamples(minLeafSamples: Int): RandomForestBuilder = {
     this.minLeafSamples = minLeafSamples
     this
   }
+
   def setMaxDepth(maxDepth: Int): RandomForestBuilder = {
     this.maxDepth = maxDepth
     this
   }
+
   def setFeaturesPerSplit(featuresPerSplit: Int): RandomForestBuilder = {
     this.featuresPerSplit = featuresPerSplit
     this
   }
+
   def build(): RandomForest = {
     new RandomForest(this.sampleFraction, this.numTrees, this.minImpurityDecrease, this.minLeafSamples, this.maxDepth, this.featuresPerSplit)
   }

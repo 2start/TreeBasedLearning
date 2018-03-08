@@ -1,12 +1,11 @@
 package de.uni_leipzig.dbs.api.java
 
+import de.uni_leipzig.dbs.Util
 import de.uni_leipzig.dbs.randomforest.{LabeledFeatures, RandomForestModel}
-import de.uni_leipzig.dbs.tree.Node
+import org.apache.flink.api.java.tuple.{Tuple2 => JavaTuple2, Tuple3 => JavaTuple3}
 import org.apache.flink.api.java.{DataSet => JavaDataSet}
 import org.apache.flink.api.scala._
 import org.apache.flink.api.scala.extensions._
-import org.apache.flink.api.java.tuple.{Tuple3 => JavaTuple3}
-import org.apache.flink.api.java.tuple.{Tuple2 => JavaTuple2}
 
 import scala.collection.JavaConverters._
 
@@ -32,16 +31,17 @@ class RandomForest(
   }
 
   def predict(javaData: JavaDataSet[java.util.Vector[java.lang.Double]]): JavaDataSet[JavaTuple2[java.lang.Double, java.util.Vector[java.lang.Double]]] = {
-    if(model == null) {
+    if (model == null) {
       throw new IllegalAccessError("Model has to be trained before trying to predict.")
     }
     val data = Util.javaDataSetToScalaDataSet(javaData).map(javaVec => javaVec.asScala.toVector.map(x => x.doubleValue()))
     val predictionData = model.predict(data)
-    val tempData = predictionData.mapWith{case(label, features) => {
+    val tempData = predictionData.mapWith { case (label, features) => {
       val javaDouble = Predef.double2Double(label)
       val javaVec = new java.util.Vector[java.lang.Double](features.map(x => Predef.double2Double(x)).asJava)
       new JavaTuple2(javaDouble, javaVec)
-    }}
+    }
+    }
     Util.scalaDataSetToJavaDataSet(tempData)
   }
 
@@ -63,7 +63,7 @@ class RandomForest(
       val features = t.f1.asScala.toVector.map(x => x.doubleValue())
       (label, features)
     })
-    val(accuracy, precision, recall) = model.evaluateBinaryClassification(data)
+    val (accuracy, precision, recall) = model.evaluateBinaryClassification(data)
     val javaAccuracy = Predef.double2Double(accuracy)
     val javaPrecision = Predef.double2Double(precision)
     val javaRecall = Predef.double2Double(recall)

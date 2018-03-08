@@ -1,7 +1,5 @@
 package de.uni_leipzig.dbs.randomforest;
 
-import de.uni_leipzig.dbs.api.java.DecisionTree;
-import de.uni_leipzig.dbs.api.java.DecisionTreeBuilder;
 import de.uni_leipzig.dbs.api.java.RandomForest;
 import de.uni_leipzig.dbs.api.java.RandomForestBuilder;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -45,7 +43,7 @@ public class JavaRandomForestTest {
         public Tuple2<Double, Vector<Double>> map(Tuple4<Boolean, Double, Double, Double> t) throws Exception {
             Double[] values = new Double[3];
             Double label;
-            if(t.f0) label = 1.0;
+            if (t.f0) label = 1.0;
             else label = -1.0;
             values[0] = t.f1;
             values[1] = t.f2;

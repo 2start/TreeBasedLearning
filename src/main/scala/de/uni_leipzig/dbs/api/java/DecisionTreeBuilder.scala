@@ -10,14 +10,17 @@ class DecisionTreeBuilder {
     this.maxDepth = maxDepth.intValue()
     return this
   }
+
   def setMinLeafSamples(minLeafSamples: java.lang.Integer): DecisionTreeBuilder = {
     this.minLeafSamples = minLeafSamples.intValue()
     return this
   }
+
   def setMinSplitGain(minSplitGain: java.lang.Double): DecisionTreeBuilder = {
     this.minImpurityDecrease = minSplitGain.doubleValue()
     return this
   }
+
   def build(): DecisionTree = {
     new DecisionTree(maxDepth, minLeafSamples, minImpurityDecrease)
   }
