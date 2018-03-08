@@ -6,28 +6,21 @@ import org.apache.flink.api.scala._
 import org.scalatest.{FlatSpec, Matchers}
 
 
-class DecisionTreeTest extends FlatSpec with Matchers {
+class DecisionTreeTrainerTest extends FlatSpec with Matchers {
 
   behavior of "a decision tree"
 
   it should "not throw an error" in {
-    val filepathTraining = URLDecoder.decode(getClass().getResource("/musicbrainz/debug2.csv").toURI().toString, "UTF-8")
+    val filepathTraining = URLDecoder.decode(getClass.getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_5].csv").toURI.toString, "UTF-8")
     val env = ExecutionEnvironment.getExecutionEnvironment
-    env.setParallelism(4)
     val inputFull: DataSet[(Int, Int, Boolean, Double, Double, Double)] = env.readCsvFile(filepathTraining, fieldDelimiter = ";", ignoreFirstLine = true)
     val input = inputFull
 
-    val data = input.map(t => {
-      ( {
-        if (t._3) 1.0 else -1.0
-      }, Vector(t._4, t._5, t._6))
-    })
+    val data = input.map(t => (if (t._3) 1.0 else -1.0, Vector(t._4,   t._5,   t._6)))
 
-    val model = new DecisionTreeModel() fit(data)
-    println(model.rootNode)
+    val model = new DecisionTreeModel(minLeafSamples = 100) fit(data)
 
-
-    val filepathTest = URLDecoder.decode(getClass().getResource("/musicbrainz/debug2.csv").toURI().toString, "UTF-8")
+    val filepathTest = URLDecoder.decode(getClass.getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_5].csv").toURI.toString, "UTF-8")
     val testFull: DataSet[(Int, Int, Boolean, Double, Double, Double)] = env.readCsvFile(filepathTest, fieldDelimiter = ";", ignoreFirstLine = true)
     val test = testFull
 
@@ -38,7 +31,7 @@ class DecisionTreeTest extends FlatSpec with Matchers {
     })
 
     println("(Accuracy, Precision, Recall): " + model.evaluateBinaryClassification(testData))
-
+    println(model.rootNode)
 
 
 

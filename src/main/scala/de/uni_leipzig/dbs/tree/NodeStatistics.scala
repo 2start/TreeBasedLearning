@@ -1,6 +1,7 @@
 package de.uni_leipzig.dbs.tree
 
 case class NodeStatistics(val labelCounts: Map[Double, Int]) extends Serializable {
+
   def entropy: Double = {
     if( count == 0) {
       return 0.0
