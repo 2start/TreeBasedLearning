@@ -11,7 +11,7 @@ import org.apache.flink.util.Collector
 import org.apache.flink.api.scala.extensions._
 //import org.apache.flink.api.scala.utils.DataSetUtils
 
-class RandomForestTrainer(
+class RandomForestModel(
                   val sampleFraction: Double = 0.05,
                   val numTrees: Int = 100,
                   val minImpurityDecrease: Double = 0.00,
