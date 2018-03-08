@@ -18,11 +18,9 @@ class RandomForestTrainerTest extends FlatSpec with Matchers {
   val lfData = data.map(t => LabeledFeatures(t._1, t._2))
   val testFeatures = lfData.map(lf => lf.features)
   "A tree ensemble" should "do something" in {
-    val te = new RandomForestTrainer(sampleFraction = 0.02, numTrees = 1, featuresPerSplit = 2)
+    val te = new RandomForestTrainer(sampleFraction = 0.05, numTrees = 1000, featuresPerSplit = 1)
     te.fit(lfData)
     val prediction = te.predictLabeledFeatures(testFeatures)
-//    prediction.first(100).print()
     println(te.evaluateBinaryClassification(data))
-
   }
 }

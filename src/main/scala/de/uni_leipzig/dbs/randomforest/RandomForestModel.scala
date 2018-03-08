@@ -38,7 +38,7 @@ class RandomForestTrainer(
     data.map(features => {
       // looking for the most commonly assigned label
       // serialized trees are sent to the workers to predict the labels
-      val label = trees.map(_.predict(features)).groupBy(identity).mapValues(_.size).maxBy(_._1)._1
+      val label = trees.map(_.predict(features)).groupBy(identity).mapValues(_.size).maxBy(_._2)._1
       LabeledFeatures(label, features)
     })
   }

@@ -25,9 +25,9 @@ class DecisionTree(
   }
   def fit(javaData: JavaDataSet[JavaTuple2[java.lang.Double, java.util.Vector[java.lang.Double]]]): DecisionTree = {
     val data = Util.javaDataSetToScalaDataSet(javaData).map(t => {
-      val d = t.f0.toDouble
-      val vec = t.f1.asScala.toVector.map(x => x.doubleValue())
-      (d, vec)
+      val label = t.f0.toDouble
+      val features = t.f1.asScala.toVector.map(x => x.doubleValue())
+      (label, features)
     })
     model = new DecisionTreeModel(this.maxDepth, this.minLeafSamples, this.minImpurityDecrease) fit(data)
     return this
@@ -36,9 +36,9 @@ class DecisionTree(
   def predict(javaData: JavaDataSet[java.util.Vector[java.lang.Double]]): JavaDataSet[JavaTuple2[java.lang.Double, java.util.Vector[java.lang.Double]]] = {
     val data = Util.javaDataSetToScalaDataSet(javaData).map(javaVec => javaVec.asScala.toVector.map(x => x.doubleValue()))
     val predictionData = model.predict(data)
-    val tempData = predictionData.mapWith{case(d, vec) => {
-      val javaDouble = Predef.double2Double(d)
-      val javaVec = new java.util.Vector[java.lang.Double](vec.map(x => Predef.double2Double(x)).asJava)
+    val tempData = predictionData.mapWith{case(label, features) => {
+      val javaDouble = Predef.double2Double(label)
+      val javaVec = new java.util.Vector[java.lang.Double](features.map(x => Predef.double2Double(x)).asJava)
       new JavaTuple2(javaDouble, javaVec)
     }}
     Util.scalaDataSetToJavaDataSet(tempData)
@@ -46,9 +46,9 @@ class DecisionTree(
 
   def evaluate(javaData: JavaDataSet[JavaTuple2[java.lang.Double, java.util.Vector[java.lang.Double]]]): JavaDataSet[JavaTuple2[java.lang.Double, java.lang.Double]] = {
     val data = Util.javaDataSetToScalaDataSet(javaData).map(t => {
-      val d = t.f0.toDouble
-      val vec = t.f1.asScala.toVector.map(x => x.doubleValue())
-      (d, vec)
+      val label = t.f0.toDouble
+      val features = t.f1.asScala.toVector.map(x => x.doubleValue())
+      (label, features)
     })
     val evalData = model.evaluate(data)
     Util.scalaDataSetToJavaDataSet(evalData.map(t => {
@@ -58,9 +58,9 @@ class DecisionTree(
 
   def evaluateBinaryClassification(javaData: JavaDataSet[JavaTuple2[java.lang.Double, java.util.Vector[java.lang.Double]]]): JavaTuple3[java.lang.Double, java.lang.Double, java.lang.Double] = {
     val data = Util.javaDataSetToScalaDataSet(javaData).map(t => {
-      val d = t.f0.toDouble
-      val vec = t.f1.asScala.toVector.map(x => x.doubleValue())
-      (d, vec)
+      val label = t.f0.toDouble
+      val features = t.f1.asScala.toVector.map(x => x.doubleValue())
+      (label, features)
     })
     val(accuracy, precision, recall) = model.evaluateBinaryClassification(data)
     val javaAccuracy = Predef.double2Double(accuracy)
