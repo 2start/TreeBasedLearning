@@ -17,7 +17,7 @@ class RandomForestModelTest extends FlatSpec with Matchers {
   "A tree ensemble" should "do something" in {
     val te = new RandomForestModel(sampleFraction = 0.05, numTrees = 1000, featuresPerSplit = 1)
     te.fit(lfData)
-    //val prediction = te.predictLabeledFeatures(testFeatures)
+    //val prediction = te.predict(testFeatures)
     println(te.evaluateBinaryClassification(data))
   }
 }
