@@ -10,7 +10,7 @@ The 'RandomForest' class contains methods to train an ensemble of decision trees
 There is a 'RandomForestBuilder' class for a more convenient setting of the parameters.
 
 #### fit 
-The fit takes a Java 'DataSet<Tuple2<Double, Vector<Double>>>' and trains the classifier. 
+The fit method takes a Java 'DataSet<Tuple2<Double, Vector<Double>>>' and trains the classifier. 
 
 #### predict 
 After the classifier is successfully trained the predict method is able to predict labels by passing it a 'DataSet<Vector<Double>>'.
@@ -38,3 +38,4 @@ There is a 'DecisionTreeBuilder' class for a more convenient setting of the para
 
 ### Scala API
 There is no dedicated Scala API yet. But you can find the above methods in the 'DecisionTreeModel' class.
+
