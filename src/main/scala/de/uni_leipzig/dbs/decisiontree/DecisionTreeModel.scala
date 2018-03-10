@@ -19,6 +19,7 @@ class DecisionTreeModel(
   }
 
   def predict(data: DataSet[Vector[Double]]): DataSet[(Double, Vector[Double])] = {
+    require(rootNode != null)
     data.map(features => (rootNode.predict(features), features))
   }
 }
