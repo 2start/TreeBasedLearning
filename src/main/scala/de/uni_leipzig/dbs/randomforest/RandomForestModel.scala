@@ -44,6 +44,51 @@ class RandomForestModel(
   def predict(data: DataSet[Vector[Double]]): DataSet[(Double, Vector[Double])] = {
     predictLabeledFeatures(data).map(lv => (lv.label, lv.features))
   }
+
+  /**
+    *
+    * @return map from feature index to average information gain
+    */
+  def getAverageFeatureInformationGain(): Map[Int, Double] = {
+    /**
+      *
+      * @param node that represents the examined tree
+      * @return featureIndices and impurity decrease for every non leaf node
+      */
+    def getFeatureInformationGain(node: Node): List[(Int, Double)] = {
+      if(node.split.isEmpty) {
+        return Nil
+      } else {
+        val split = node.split.get
+        val featureIndex = split.featureIndex
+        val entropy = node.stats.entropy
+        val leftChild = split.leftChild
+        val rightChild = split.rightChild
+        val leftChildEntropy = leftChild.stats.entropy
+        val rightChildEntropy = rightChild.stats.entropy
+        val leftChildCount = leftChild.stats.count
+        val rightChildCount = rightChild.stats.count
+        val totalCount = leftChildCount + rightChildCount
+        val leftChildWeightedEntropy = leftChildCount/totalCount * leftChildEntropy
+        val rightChildWeightedEntropy = rightChildCount/totalCount * rightChildEntropy
+        val informationGain = entropy - leftChildWeightedEntropy - rightChildWeightedEntropy
+
+        return List((featureIndex, informationGain)) ++ getFeatureInformationGain(leftChild) ++ getFeatureInformationGain(rightChild)
+
+      }
+    }
+
+    // calculates (feature index, average information gain) out of all nodes (feature index, information gain) tuples
+    trees
+      .flatMap(node => getFeatureInformationGain(node))
+      .map{case(featureIndex, informationGain) => (featureIndex, informationGain, 1)}
+      .groupBy{case(featureIndex, _, _) => featureIndex}
+      .mapValues{groupedTuples => {
+        val featureInformationGains = groupedTuples.map{case(_, informationGain, _) => informationGain}
+        val featureCounts = groupedTuples.map{case(_, _, count) => count}
+        featureInformationGains.sum/featureCounts.sum
+      }}
+  }
 }
 
 class Bootstrapper(fraction: Double, numTrees: Int) extends RichFlatMapFunction[LabeledFeatures, (Int, LabeledFeatures)] {

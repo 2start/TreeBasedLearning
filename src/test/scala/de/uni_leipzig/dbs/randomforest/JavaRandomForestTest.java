@@ -38,6 +38,8 @@ public class JavaRandomForestTest {
         DataSet<Tuple2<Double, Vector<Double>>> predictedData = model.predict(dataV);
 
         System.out.println("(Accuracy, Precision, Recall): " + model.evaluateBinaryClassification(dataLV));
+        // measure variable importance
+        System.out.println(model.getFeatureAverageInformationGain());
     }
 
     public static final class RawDataToInput implements MapFunction<Tuple4<Boolean, Double, Double, Double>, Tuple2<Double, Vector<Double>>> {

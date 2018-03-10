@@ -11,7 +11,7 @@ class RandomForestModelTest extends FlatSpec with Matchers {
   val inputFull: DataSet[(Int, Int, Boolean, Double, Double, Double)] = env.readCsvFile(filepathTraining, fieldDelimiter = ";", ignoreFirstLine = true)
   val input = inputFull
 
-  val data = input.map(t => (if (t._3) 1.0 else -1.0, Vector(t._4, t._5, t._6)))
+  val data = input.map(t => (if (t._3) 1.0 else -1.0, Vector(t._4, t._6)))
   val lfData = data.map(t => LabeledFeatures(t._1, t._2))
   val testFeatures = lfData.map(lf => lf.features)
   "A tree ensemble" should "do something" in {
@@ -19,5 +19,6 @@ class RandomForestModelTest extends FlatSpec with Matchers {
     te.fit(lfData)
     //val prediction = te.predict(testFeatures)
     println(te.evaluateBinaryClassification(data))
+    println(te.getAverageFeatureInformationGain())
   }
 }

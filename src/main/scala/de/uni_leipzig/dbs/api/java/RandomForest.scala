@@ -72,6 +72,10 @@ class RandomForest(
     new JavaTuple3[java.lang.Double, java.lang.Double, java.lang.Double](javaAccuracy, javaPrecision, javaRecall)
   }
 
+  def getFeatureAverageInformationGain(): java.util.Map[Int, Double] = {
+    model.getAverageFeatureInformationGain().asJava
+  }
+
   def save(): Unit = {
     val oos = new ObjectOutputStream(new FileOutputStream("rfmodel"))
     oos.writeObject(this.model)
