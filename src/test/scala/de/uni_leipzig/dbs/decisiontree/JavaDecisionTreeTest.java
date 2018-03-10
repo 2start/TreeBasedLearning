@@ -30,11 +30,12 @@ public class JavaDecisionTreeTest {
         DataSet<Tuple2<Double, Vector<Double>>> dataLV = data.map(new RawDataToInput());
         DecisionTree model = new DecisionTreeBuilder()
 //                .setMinSplitGain(0.0)
-                .setMinLeafSamples(50)
+                .setMinLeafSamples(100)
 //                .setMaxDepth(10)
                 .build()
                 .fit(dataLV);
-
+        model.save();
+        model.load();
         DataSet<Vector<Double>> dataV = dataLV.map(new LabelVectorToVector());
         DataSet<Tuple2<Double, Vector<Double>>> predictedData = model.predict(dataV);
 

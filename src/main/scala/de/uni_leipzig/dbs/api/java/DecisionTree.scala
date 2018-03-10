@@ -1,5 +1,7 @@
 package de.uni_leipzig.dbs.api.java
 
+import java.io.{FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
+
 import de.uni_leipzig.dbs.Util
 import de.uni_leipzig.dbs.decisiontree.DecisionTreeModel
 import de.uni_leipzig.dbs.tree.Node
@@ -70,6 +72,18 @@ class DecisionTree(
     val javaPrecision = Predef.double2Double(precision)
     val javaRecall = Predef.double2Double(recall)
     new JavaTuple3[java.lang.Double, java.lang.Double, java.lang.Double](javaAccuracy, javaPrecision, javaRecall)
+  }
+
+  def save(): Unit = {
+    val oos = new ObjectOutputStream(new FileOutputStream("rfmodel"))
+    oos.writeObject(this.model)
+    oos.close()
+  }
+
+  def load(): Unit = {
+    val ois = new ObjectInputStream(new FileInputStream("rfmodel"))
+    this.model = ois.readObject().asInstanceOf[DecisionTreeModel]
+    ois.close()
   }
 }
 
