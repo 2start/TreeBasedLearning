@@ -21,12 +21,16 @@ class Node(
   }
 
   override def toString: String = {
+    def generateWhitespaces(id: Int): String = {
+      val depth = (math.log(id) / math.log(2)).toInt
+      "  " * depth
+    }
     if (split.isEmpty) {
-      s"ID: $id, $stats, ${stats.entropy}"
+      s"${generateWhitespaces(id)}ID: $id, ${stats.prediction}"
     } else {
-      s"ID: $id, $stats, ${stats.entropy}, feature: ${split.get.featureIndex}, <= ${split.get.threshold}" +
-        s"\n ${split.get.leftChild.toString}" +
-        s"\n ${split.get.rightChild.toString}"
+      s"${generateWhitespaces(id)}ID: $id, feature: ${split.get.featureIndex}, <=: ${split.get.threshold}" +
+        s"\n${split.get.leftChild.toString}" +
+        s"\n${split.get.rightChild.toString}"
     }
   }
 
