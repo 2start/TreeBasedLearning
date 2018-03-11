@@ -23,8 +23,8 @@ class DecisionTree(
 
   var model: DecisionTreeModel = _
 
-  def getRootNode: Node = {
-    model.rootNode
+  def printToConsole(): Unit = {
+    println(model.rootNode.toString)
   }
 
   def fit(javaData: JavaDataSet[JavaTuple2[java.lang.Double, java.util.Vector[java.lang.Double]]]): DecisionTree = {
@@ -85,6 +85,8 @@ class DecisionTree(
     this.model = ois.readObject().asInstanceOf[DecisionTreeModel]
     ois.close()
   }
+
+
 }
 
 
