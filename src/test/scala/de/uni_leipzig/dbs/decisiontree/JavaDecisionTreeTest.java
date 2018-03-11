@@ -40,8 +40,7 @@ public class JavaDecisionTreeTest {
         DataSet<Tuple2<Double, Vector<Double>>> predictedData = model.predict(dataV);
 
         System.out.println("(Accuracy, Precision, Recall): " + model.evaluateBinaryClassification(dataLV));
-        System.out.println(model.getRootNode());
-
+        model.printToConsole();
     }
 
     public static final class RawDataToInput implements MapFunction<Tuple4<Boolean, Double, Double, Double>, Tuple2<Double, Vector<Double>>> {
