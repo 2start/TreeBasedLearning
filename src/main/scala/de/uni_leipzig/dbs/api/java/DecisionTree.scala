@@ -79,9 +79,13 @@ class DecisionTree(
     oos.writeObject(this.model)
     oos.close()
   }
-
-  def load(): Unit = {
-    val ois = new ObjectInputStream(new FileInputStream("rfmodel"))
+  def save(filepath: String): Unit = {
+    val oos = new ObjectOutputStream(new FileOutputStream(filepath))
+    oos.writeObject(this.model)
+    oos.close()
+  }
+  def load(filepath: String): Unit = {
+    val ois = new ObjectInputStream(new FileInputStream(filepath: String))
     this.model = ois.readObject().asInstanceOf[DecisionTreeModel]
     ois.close()
   }

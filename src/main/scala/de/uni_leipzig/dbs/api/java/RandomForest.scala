@@ -81,9 +81,13 @@ class RandomForest(
     oos.writeObject(this.model)
     oos.close()
   }
-
-  def load(): Unit = {
-    val ois = new ObjectInputStream(new FileInputStream("rfmodel"))
+  def save(filepath: String): Unit = {
+    val oos = new ObjectOutputStream(new FileOutputStream(filepath))
+    oos.writeObject(this.model)
+    oos.close()
+  }
+  def load(filepath: String): Unit = {
+    val ois = new ObjectInputStream(new FileInputStream(filepath))
     this.model = ois.readObject().asInstanceOf[RandomForestModel]
     ois.close()
   }
