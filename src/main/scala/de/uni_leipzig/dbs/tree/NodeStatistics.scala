@@ -1,12 +1,16 @@
 package de.uni_leipzig.dbs.tree
 
-case class NodeStatistics(val labelCounts: Map[Double, Int]) extends Serializable {
+case class NodeStatistics(  labelCounts: Map[Double, Int]) extends Serializable {
 
   def entropy: Double = {
     if (count == 0) {
       return 0.0
     }
-    val labelProbabilities = labelCounts.values.map(labelCount => labelCount.toDouble / count.toDouble)
+    val nonZeroLabelCounts = labelCounts.filter( _ match {
+      case(label, 0) => false
+      case _ => true
+    })
+    val labelProbabilities = nonZeroLabelCounts.values.map(labelCount => labelCount.toDouble / count.toDouble)
     val entropySumSteps = labelProbabilities.map(x => x * math.log(x) / math.log(2))
     -1.0 * entropySumSteps.sum
   }

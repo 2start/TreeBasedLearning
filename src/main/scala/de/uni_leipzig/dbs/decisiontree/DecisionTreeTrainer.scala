@@ -2,7 +2,7 @@ package de.uni_leipzig.dbs.decisiontree
 
 import java.lang
 
-import de.uni_leipzig.dbs.tree.{Node, NodeStatistics, Split}
+import de.uni_leipzig.dbs.tree.{Node, NodeStatistics, Split, SplitInformation}
 import org.apache.flink.api.common.functions.{GroupReduceFunction, RichFilterFunction}
 import org.apache.flink.api.common.operators.Order
 import org.apache.flink.api.scala._
@@ -11,6 +11,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 class DecisionTreeTrainer(
                            val maxDepth: Int = Int.MaxValue,
@@ -18,37 +19,22 @@ class DecisionTreeTrainer(
                            val minImpurityDecrease: Double = 0
                          ) {
 
-  def getMedian(featureValueData: DataSet[(Int, Double)]): DataSet[(Int, Double)] = {
-    featureValueData
-      .groupingBy { case (feature, value) => feature }
-      .sortGroupWith(Order.ASCENDING) { case (_, value) => value }
-      .reduceGroup(new FeatureMedianFilter)
+  def bestSplit(featureValueLabelData: DataSet[(Int, Double, Double)]): SplitInformation = {
+    featureValueLabelData
+      .groupingBy { case (feature, value, label) => feature }
+      .sortGroupWith(Order.ASCENDING) { case (_, value, _) => value }
+      .reduceGroup(new FeatureSplitInformationCalculator)
+      .collect()
+      .minBy(splitInfo => splitInfo.calculateWeightedEntropy)
   }
 
-  def bestSplit(id: Int, data: DataSet[(Double, Vector[Double])], parentStats: NodeStatistics): Node = {
+  def createNode(id: Int, data: DataSet[(Double, Vector[Double])], parentStats: NodeStatistics): Node = {
 
-    def featureValueLabelToFeatureStats(featureValueLabelData: DataSet[(Int, Double, Double)]): DataSet[(Int, NodeStatistics)] = {
-      featureValueLabelData
-        .mapWith { case (feature, value, label) => (feature, label) }
-        .groupingBy { case (feature, label) => feature }
-        .reduceGroup(new FeatureLabelToFeatureStats)
-    }
-
-    def calculateSplitEntropy(lowerStats: NodeStatistics, upperStats: NodeStatistics): Double = {
-      val lowerCount = lowerStats.count.toDouble
-      val upperCount = upperStats.count.toDouble
-      val totalCount = lowerCount + upperCount
-      val lowerEntropy = lowerStats.entropy
-      val upperEntropy = upperStats.entropy
-
-      lowerCount / totalCount * lowerEntropy + upperCount / totalCount * upperEntropy
-    }
-
-    def shouldTerminate(id: Int, parentStats: NodeStatistics, lowerStats: NodeStatistics, upperStats: NodeStatistics): Boolean = {
+    def shouldTerminate(id: Int, parentStats: NodeStatistics, splitInfo: SplitInformation): Boolean = {
       val depth = (math.log(id) / math.log(2)).toInt
-      val impurityDecrease = parentStats.entropy - calculateSplitEntropy(lowerStats, upperStats)
+      val impurityDecrease = parentStats.entropy - splitInfo.calculateWeightedEntropy
 
-      if (lowerStats.count < minLeafSamples || upperStats.count < minLeafSamples) {
+      if (splitInfo.lowerStats.count < minLeafSamples || splitInfo.upperStats.count < minLeafSamples) {
         return true
       }
       if (depth >= maxDepth) {
@@ -63,55 +49,20 @@ class DecisionTreeTrainer(
 
     val featureValueLabelData = data
       .flatMapWith { case (label, vec) => 0 until vec.size map (i => (i, vec(i), label)) }
-    val featureValueData = featureValueLabelData.mapWith { case (feature, value, _) => (feature, value) }
 
-    val featureMedianData = getMedian(featureValueData)
+    val splitInfo = bestSplit(featureValueLabelData)
 
-    val lowerData = featureValueLabelData
-      .filter(new FeatureValueLowerUpperSplit(upperSplit = false)).withBroadcastSet(featureMedianData, "featureMedianData")
-
-    val upperData = featureValueLabelData
-      .filter(new FeatureValueLowerUpperSplit(upperSplit = true)).withBroadcastSet(featureMedianData, "featureMedianData")
-
-    val lowerFeatureStatsData = featureValueLabelToFeatureStats(lowerData)
-    val upperFeatureStatsData = featureValueLabelToFeatureStats(upperData)
-
-    val featureStatsData = lowerFeatureStatsData.fullOuterJoin(upperFeatureStatsData).where(0).equalTo(0) {
-      (lowerFeatureStats, upperFeatureStats) => {
-
-        val featureIndex = Option(lowerFeatureStats) match {
-          case (Some((featureIndex, _))) => featureIndex
-          case _ => upperFeatureStats._1
-        }
-
-        val dummyFeatureStats = (featureIndex, NodeStatistics(Map(0.0 -> 0)))
-        val lowerStats = Option(lowerFeatureStats).getOrElse(dummyFeatureStats)._2
-        val upperStats = Option(upperFeatureStats).getOrElse(dummyFeatureStats)._2
-
-        (featureIndex, lowerStats, upperStats)
-      }
-    }
-
-
-    val featureMedianMap = featureMedianData.collect().toMap
-    val featureStatsSeq = featureStatsData.collect()
-
-    val (splitFeatureIndex, lowerStats, upperStats) =
-      featureStatsSeq.minBy { case (feature, lowerStats, upperStats) => calculateSplitEntropy(lowerStats, upperStats) }
-
-    val median = featureMedianMap(splitFeatureIndex)
-
-    if (shouldTerminate(id, parentStats, lowerStats, upperStats)) {
+    if (shouldTerminate(id, parentStats, splitInfo)) {
       return new Node(id, parentStats, None)
     }
 
-    val leftChildData = data.filterWith { case (label, vec) => vec(splitFeatureIndex) <= median }
-    val rightChildData = data.filterWith { case (label, vec) => vec(splitFeatureIndex) > median }
+    val leftChildData = data.filterWith { case (label, vec) => vec(splitInfo.feature) <= splitInfo.threshold }
+    val rightChildData = data.filterWith { case (label, vec) => vec(splitInfo.feature) > splitInfo.threshold }
 
-    val leftChild = bestSplit(id * 2, leftChildData, lowerStats)
-    val rightChild = bestSplit(id * 2 + 1, rightChildData, upperStats)
+    val leftChild = createNode(id * 2, leftChildData, splitInfo.lowerStats)
+    val rightChild = createNode(id * 2 + 1, rightChildData, splitInfo.upperStats)
 
-    val split = Split(leftChild, rightChild, splitFeatureIndex, median)
+    val split = Split(leftChild, rightChild, splitInfo.feature, splitInfo.threshold)
     return new Node(id, parentStats, Some(split))
   }
 
@@ -129,63 +80,65 @@ class DecisionTreeTrainer(
 
     val rootNodeStats = NodeStatistics(labelCountSeq.toMap)
 
-    return bestSplit(1, data, rootNodeStats)
+    return createNode(1, data, rootNodeStats)
 
   }
 }
 
-class FeatureMedianFilter extends GroupReduceFunction[(Int, Double), (Int, Double)] {
-  override def reduce(it: lang.Iterable[(Int, Double)], out: Collector[(Int, Double)]): Unit = {
-    val featureValueVec = it.asScala.toVector
+class FeatureSplitInformationCalculator extends GroupReduceFunction[(Int, Double, Double), SplitInformation] {
+  override def reduce(iterable: lang.Iterable[(Int, Double, Double)], collector: Collector[SplitInformation]): Unit = {
+    def getSplitInformation(feature: Int, valueLabelData: List[(Double, Double)]): SplitInformation = {
+      val sortedValueLabelData = valueLabelData
+        .sortBy{ case(value, label) => value}
 
-    if (featureValueVec.size == 1) {
-      out.collect(featureValueVec(0))
-      return
+
+      val lowerLabelCountMap: mutable.Map[Double, Int] = mutable.Map.empty
+      val upperLabelCountMap: mutable.Map[Double, Int] = mutable.Map.empty
+      for ((value, label) <- valueLabelData) {
+        if (upperLabelCountMap.contains(label)) upperLabelCountMap(label) += 1
+        else upperLabelCountMap(label) = 1
+      }
+
+
+      var lowerStats = NodeStatistics(lowerLabelCountMap.toMap)
+      var upperStats = NodeStatistics(upperLabelCountMap.toMap)
+      var bestSplitInfo = SplitInformation(feature, sortedValueLabelData(0)._1, lowerStats.copy(), upperStats.copy())
+
+      var i = 0
+      while (i < sortedValueLabelData.length) {
+
+        val currentLabel = sortedValueLabelData(i)._2
+        var upperLabelCount = upperLabelCountMap.get(currentLabel).get
+        upperLabelCount -= 1
+        upperLabelCountMap += (currentLabel -> upperLabelCount)
+        var lowerLabelCount = lowerLabelCountMap.get(currentLabel).getOrElse(0)
+        lowerLabelCount += 1
+        lowerLabelCountMap += (currentLabel -> lowerLabelCount)
+
+        // gets current and next value as an option
+        val currentVal = sortedValueLabelData.lift(i).map{case(value, label) => value}
+        val nextVal = sortedValueLabelData.lift(i+1).map{case(value, label) => value}
+
+        // skips same elements until last elemente because they always belong to the same node
+        if(currentVal != nextVal) {
+          upperStats = NodeStatistics(upperLabelCountMap.toMap)
+          lowerStats = NodeStatistics(lowerLabelCountMap.toMap)
+          val currentSplitInfo = SplitInformation(feature, currentVal.get, lowerStats, upperStats)
+          if (currentSplitInfo.calculateWeightedEntropy < bestSplitInfo.calculateWeightedEntropy) {
+            bestSplitInfo = currentSplitInfo
+          }
+        }
+
+
+        i += 1
+      }
+
+      return bestSplitInfo
     }
-
-    val featureIndex = featureValueVec(0)._1
-    val values = featureValueVec.map({ case (feature, value) => value })
-
-    if (values.size % 2 == 0) {
-      val median = (values(values.size / 2 - 1) + values(values.size / 2)) / 2
-      out.collect(featureIndex, median)
-    } else {
-      out.collect(featureIndex, values(values.size / 2))
-    }
-  }
-}
-
-class FeatureLabelToFeatureStats extends GroupReduceFunction[(Int, Double), (Int, NodeStatistics)] {
-  override def reduce(it: lang.Iterable[(Int, Double)], out: Collector[(Int, NodeStatistics)]) = {
-    val values = it.asScala.toVector
-
-    val featureIndex = values(0)._1
-    val labelCountMap = values
-      .map { case (feature, label) => label }
-      .groupBy(identity)
-      .mapValues(_.size)
-
-    out.collect(featureIndex, NodeStatistics(labelCountMap))
-  }
-}
-
-class FeatureValueLowerUpperSplit(val upperSplit: Boolean = true) extends RichFilterFunction[(Int, Double, Double)] {
-  var featureMedianMap: Map[Int, Double] = _
-
-  override def open(parameters: Configuration): Unit = {
-    featureMedianMap = getRuntimeContext
-      .getBroadcastVariable[(Int, Double)]("featureMedianData")
-      .asScala
-      .toMap
-  }
-
-  override def filter(in: (Int, Double, Double)): Boolean = {
-    val (featureIndex, value, label) = in
-
-    if (upperSplit == (value > featureMedianMap(featureIndex))) {
-      true
-    } else {
-      false
-    }
+    val data = iterable.asScala.toList
+    val feature = data.head._1
+    val valueLabelData = data.map{case(feature, value, label) => (value, label)}
+    val bestSplitInfo = getSplitInformation(feature, valueLabelData)
+    collector.collect(bestSplitInfo)
   }
 }

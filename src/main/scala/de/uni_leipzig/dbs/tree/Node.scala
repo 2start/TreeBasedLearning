@@ -28,7 +28,7 @@ class Node(
     if (split.isEmpty) {
       s"${generateWhitespaces(id)}ID: $id, ${stats.prediction}"
     } else {
-      s"${generateWhitespaces(id)}ID: $id, feature: ${split.get.featureIndex}, <=: ${split.get.threshold}" +
+      s"${generateWhitespaces(id)}ID: $id, feature: ${split.get.featureIndex}, <=: ${split.get.threshold}, entropy: ${stats.entropy}" +
         s"\n${split.get.leftChild.toString}" +
         s"\n${split.get.rightChild.toString}"
     }

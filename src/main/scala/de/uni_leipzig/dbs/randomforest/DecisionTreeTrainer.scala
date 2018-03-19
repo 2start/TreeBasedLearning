@@ -1,7 +1,8 @@
 package de.uni_leipzig.dbs.randomforest
 
-import de.uni_leipzig.dbs.tree.{Node, NodeStatistics, Split}
+import de.uni_leipzig.dbs.tree.{Node, NodeStatistics, Split, SplitInformation}
 
+import scala.collection.mutable
 import scala.util.Random
 
 class DecisionTreeTrainer(
@@ -10,50 +11,84 @@ class DecisionTreeTrainer(
                            val featuresPerSplit: Int = 1,
                            val maxDepth: Int = Int.MaxValue
                          ) extends Serializable {
+  /**
+    *
+    * @param valueLabelData a list of value, label tupels
+    * @return threshold to split child data on
+    */
+
+  def getSplitInformation(feature: Int, valueLabelData: List[(Double, Double)]): SplitInformation = {
+    val sortedValueLabelData = valueLabelData
+      .sortBy{ case(value, label) => value}
+
+
+    val lowerLabelCountMap: mutable.Map[Double, Int] = mutable.Map.empty
+    val upperLabelCountMap: mutable.Map[Double, Int] = mutable.Map.empty
+    for ((value, label) <- valueLabelData) {
+      if (upperLabelCountMap.contains(label)) upperLabelCountMap(label) += 1
+      else upperLabelCountMap(label) = 1
+    }
+
+
+    var lowerStats = NodeStatistics(lowerLabelCountMap.toMap)
+    var upperStats = NodeStatistics(upperLabelCountMap.toMap)
+    var bestSplitInfo = SplitInformation(feature, sortedValueLabelData(0)._1, lowerStats.copy(), upperStats.copy())
+
+    var i = 0
+    while (i < sortedValueLabelData.length) {
+
+      val currentLabel = sortedValueLabelData(i)._2
+      var upperLabelCount = upperLabelCountMap.get(currentLabel).get
+      upperLabelCount -= 1
+      upperLabelCountMap += (currentLabel -> upperLabelCount)
+      var lowerLabelCount = lowerLabelCountMap.get(currentLabel).getOrElse(0)
+      lowerLabelCount += 1
+      lowerLabelCountMap += (currentLabel -> lowerLabelCount)
+
+      // gets current and next value as an option
+      val currentVal = sortedValueLabelData.lift(i).map{case(value, label) => value}
+      val nextVal = sortedValueLabelData.lift(i+1).map{case(value, label) => value}
+
+      // skips same elements until last elemente because they always belong to the same node
+      if(currentVal != nextVal) {
+        upperStats = NodeStatistics(upperLabelCountMap.toMap)
+        lowerStats = NodeStatistics(lowerLabelCountMap.toMap)
+        val currentSplitInfo = SplitInformation(feature, currentVal.get, lowerStats, upperStats)
+        if (currentSplitInfo.calculateWeightedEntropy < bestSplitInfo.calculateWeightedEntropy) {
+          bestSplitInfo = currentSplitInfo
+        }
+      }
+
+
+      i += 1
+    }
+
+    return bestSplitInfo
+  }
+
   def splitNode(labeledFeaturesList: List[LabeledFeatures], leaf: Node): Node = {
     require(labeledFeaturesList.nonEmpty)
     require(featuresPerSplit <= labeledFeaturesList.head.features.length)
-    // get random feature subset and create mapping from new to old feature
+
+    // get random feature subset and create feature index, feature value, label data
     val featureSize = labeledFeaturesList.head.features.size
     val randFeatureOrder = Random.shuffle(Vector.range(0, featureSize))
-    val filteredFeaturesNewToOld = randFeatureOrder.indices map (i => (i, randFeatureOrder(i))) toMap
-    val filteredFeatures = filteredFeaturesNewToOld.values.take(featuresPerSplit).toVector
-    val filteredLabeledFeaturesList = labeledFeaturesList.map(_.filterFeatures(filteredFeatures))
-
-    val splitStats = 0 until featuresPerSplit map (i => {
-      val labelFeatureList = filteredLabeledFeaturesList.map(lf => (lf.label, lf.features(i)))
-      val sortedLabelFeatureList = labelFeatureList.sortBy(_._2)
-      val size = sortedLabelFeatureList.size
-      val median = if (size % 2 == 0) {
-        sortedLabelFeatureList.slice(size / 2 - 1, size / 2 + 1).map(_._2).sum / 2
-      } else {
-        sortedLabelFeatureList(size / 2)._2
-      }
-      val lowerSplitLabels = sortedLabelFeatureList.filter(_._2 <= median).map(_._1)
-      val upperSplitLabels = sortedLabelFeatureList.filter(_._2 > median).map(_._1)
-
-      val lowerStats = NodeStatistics(lowerSplitLabels.groupBy(identity).mapValues(_.size))
-      val upperStats = NodeStatistics(upperSplitLabels.groupBy(identity).mapValues(_.size))
-
-      (i, lowerStats, upperStats, median)
-
+    val randFeatureSubset = randFeatureOrder.take(featuresPerSplit)
+    val featureValueLabelData = labeledFeaturesList.flatMap(lf => {
+      randFeatureSubset.map(i => (i, lf.features(i), lf.label))
     })
 
-    val minFeatureEntropy = splitStats
-      .map { case (featureIndex, lowerStats, upperStats, median) => {
-        val totalCount = lowerStats.count + upperStats.count
-        val lowerWeightedEntropy = (lowerStats.count.toDouble / totalCount) * lowerStats.entropy
-        val upperWeightedEntropy = (upperStats.count.toDouble / totalCount) * upperStats.entropy
-        val splitEntropy = lowerWeightedEntropy + upperWeightedEntropy
-        (featureIndex, lowerStats, upperStats, splitEntropy, median)
-      }
-      }
-      .minBy(_._4)
+    val splitInfos = featureValueLabelData
+      .groupBy{case(feature, value, label) => feature}
+      .mapValues(featureValueLabelList => featureValueLabelList.map { case(feature, value, label) =>
+        (value, label)
+      })
+      .map{case(feature, valueLabelData) => getSplitInformation(feature, valueLabelData)}
 
-    val (splitFeatureIndex, lowerStats, upperStats, splitEntropy, median) = minFeatureEntropy
+    val bestSplitInfo = splitInfos.minBy(splitInfo => splitInfo.calculateWeightedEntropy)
 
-    val lowerLeaf = new Node(leaf.id * 2, lowerStats, None)
-    val upperLeaf = new Node(leaf.id * 2 + 1, upperStats, None)
+    val lowerLeaf = new Node(leaf.id * 2, bestSplitInfo.lowerStats, None)
+    val upperLeaf = new Node(leaf.id * 2 + 1, bestSplitInfo.upperStats, None)
 
     if (lowerLeaf.stats.count < minLeafSamples || upperLeaf.stats.count < minLeafSamples) {
       return leaf
@@ -64,18 +99,18 @@ class DecisionTreeTrainer(
       return leaf
     }
 
-    val informationGain = leaf.stats.entropy - splitEntropy
+    val informationGain = leaf.stats.entropy - bestSplitInfo.calculateWeightedEntropy
     if (informationGain <= minImpurityDecrease) {
       return leaf
     }
 
-    val splitFeatureIndexOldData = filteredFeaturesNewToOld(splitFeatureIndex)
-    val lowerNodeData = labeledFeaturesList.filter(lf => lf.features(splitFeatureIndexOldData) <= median)
-    val upperNodeData = labeledFeaturesList.filter(lf => lf.features(splitFeatureIndexOldData) > median)
+    val lowerNodeData = labeledFeaturesList.filter(lf => lf.features(bestSplitInfo.feature) <= bestSplitInfo.threshold)
+    val upperNodeData = labeledFeaturesList.filter(lf => lf.features(bestSplitInfo.feature) > bestSplitInfo.threshold)
+
     val lowerNode = splitNode(lowerNodeData, lowerLeaf)
     val upperNode = splitNode(upperNodeData, upperLeaf)
 
-    val split = Split(lowerNode, upperNode, filteredFeaturesNewToOld(splitFeatureIndex), median)
+    val split = Split(lowerNode, upperNode, bestSplitInfo.feature, bestSplitInfo.threshold)
     val node = new Node(leaf.id, leaf.stats, Some(split))
 
     return node

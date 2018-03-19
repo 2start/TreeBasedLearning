@@ -1,7 +1,7 @@
 package de.uni_leipzig.dbs.api.java
 
 class RandomForestBuilder {
-  var sampleFraction: Double = 0.05
+  var sampleFraction: Double = 0.01
   var numTrees: Int = 100
   var minImpurityDecrease: Double = 0.00
   var minLeafSamples: Int = 1
