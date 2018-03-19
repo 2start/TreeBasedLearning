@@ -21,6 +21,7 @@ class NodeTest extends FlatSpec with Matchers {
     val node2 = new Node(2, NodeStatistics(Map(3.0 -> 4)), Some(Split(leaf4, leaf5, 1, 4.0)))
     val rootNode = new Node(1, NodeStatistics(Map(1.0 -> 5)), Some(Split(node2, leaf3, 0, 5.0)))
 
+    println(rootNode)
     rootNode.predict(Vector(1.0, 1.0)) should be(0.0)
     rootNode.predict(Vector(1.0, 5.0)) should be(1.0)
     rootNode.predict(Vector(5.0, 5.0)) should be(1.0)

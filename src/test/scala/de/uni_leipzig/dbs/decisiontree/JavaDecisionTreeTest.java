@@ -19,7 +19,7 @@ public class JavaDecisionTreeTest {
         // emulates local environment on java collections for improved performance
 //        ExecutionEnvironment env = ExecutionEnvironment.createCollectionsEnvironment();
         ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-        String filepath = URLDecoder.decode(JavaDecisionTreeTest.class.getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_2].csv").toURI().getPath(), "UTF-8");
+        String filepath = URLDecoder.decode(JavaDecisionTreeTest.class.getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_4].csv").toURI().getPath(), "UTF-8");
         DataSet<Tuple4<Boolean, Double, Double, Double>> data = env.readCsvFile(filepath)
                 .ignoreFirstLine()
                 .fieldDelimiter(";")
@@ -30,12 +30,10 @@ public class JavaDecisionTreeTest {
         DataSet<Tuple2<Double, Vector<Double>>> dataLV = data.map(new RawDataToInput());
         DecisionTree model = new DecisionTreeBuilder()
 //                .setMinSplitGain(0.0)
-                .setMinLeafSamples(100)
+                .setMinLeafSamples(1)
 //                .setMaxDepth(10)
                 .build()
                 .fit(dataLV);
-        model.save();
-        model.load();
         DataSet<Vector<Double>> dataV = dataLV.map(new LabelVectorToVector());
         DataSet<Tuple2<Double, Vector<Double>>> predictedData = model.predict(dataV);
 

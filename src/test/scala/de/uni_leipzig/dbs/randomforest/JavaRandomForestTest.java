@@ -32,8 +32,6 @@ public class JavaRandomForestTest {
                 .setNumTrees(500)
                 .build();
         model.fit(dataLV);
-        model.save();
-        model.load();
         DataSet<Vector<Double>> dataV = dataLV.map(new LabelVectorToVector());
         DataSet<Tuple2<Double, Vector<Double>>> predictedData = model.predict(dataV);
 

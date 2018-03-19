@@ -23,7 +23,7 @@ class DecisionTreeTrainerTest extends FlatSpec with Matchers {
   "A decisionTreeTrainer" should "handle a big dataset" in {
 
 
-    val bufferedSource = io.Source.fromFile(getClass.getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_5].csv").toURI)
+    val bufferedSource = io.Source.fromFile(getClass.getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_4].csv").toURI)
     // skips header
     val linesWithHeader = bufferedSource.getLines().drop(1)
     val lines = linesWithHeader.map(_.split("\\;").map(_.trim)).toList
@@ -32,7 +32,7 @@ class DecisionTreeTrainerTest extends FlatSpec with Matchers {
       LabeledFeatures(label, lineAttributes.slice(3, lineAttributes.length).map(_.toDouble).toVector)
     })
 
-    val decisionTreeTrainer = new DecisionTreeTrainer(featuresPerSplit = 3)
+    val decisionTreeTrainer = new DecisionTreeTrainer(featuresPerSplit = 3, minLeafSamples = 1)
     val tree = decisionTreeTrainer.createTree(labeledFeaturesList)
     println(tree)
   }
