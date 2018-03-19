@@ -106,7 +106,11 @@ under the License.
 			<artifactId>flink-streaming-scala_${scala.binary.version}</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
-
+        <dependency>
+          <groupId>org.apache.flink</groupId>
+          <artifactId>flink-ml_${scala.binary.version}</artifactId>
+          <version>1.4.1</version>
+        </dependency>
 		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
