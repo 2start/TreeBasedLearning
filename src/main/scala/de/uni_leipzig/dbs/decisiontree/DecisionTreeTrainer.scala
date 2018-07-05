@@ -20,12 +20,16 @@ class DecisionTreeTrainer(
                          ) {
 
   def bestSplit(featureValueLabelData: DataSet[(Int, Double, Double)]): SplitInformation = {
-    featureValueLabelData
+    val splitInfos = featureValueLabelData
       .groupingBy { case (feature, value, label) => feature }
       .sortGroupWith(Order.ASCENDING) { case (_, value, _) => value }
       .reduceGroup(new FeatureSplitInformationCalculator)
       .collect()
-      .minBy(splitInfo => splitInfo.calculateWeightedEntropy)
+    if(splitInfos.isEmpty) {
+      println("mmh")
+    }
+      splitInfos.minBy(splitInfo => splitInfo.calculateWeightedEntropy)
+
   }
 
   def createNode(id: Int, data: DataSet[(Double, Vector[Double])], parentStats: NodeStatistics): Node = {
@@ -67,6 +71,7 @@ class DecisionTreeTrainer(
   }
 
   def createTree(data: DataSet[(Double, Vector[Double])]): Node = {
+    println("createTree")
     val labelCountData = data
       .mapWith { case (label, vec) => (label, 1) }
       .groupingBy { case (label, count) => label }
@@ -119,12 +124,12 @@ class FeatureSplitInformationCalculator extends GroupReduceFunction[(Int, Double
         val currentVal = sortedValueLabelData.lift(i).map{case(value, label) => value}
         val nextVal = sortedValueLabelData.lift(i+1).map{case(value, label) => value}
 
-        // skips same elements until last elemente because they always belong to the same node
+        // skips same elements until last element because they always belong to the same node
         if(currentVal != nextVal) {
           upperStats = NodeStatistics(upperLabelCountMap.toMap)
           lowerStats = NodeStatistics(lowerLabelCountMap.toMap)
           val currentSplitInfo = SplitInformation(feature, currentVal.get, lowerStats, upperStats)
-          if (currentSplitInfo.calculateWeightedEntropy < bestSplitInfo.calculateWeightedEntropy) {
+          if (currentSplitInfo.calculateWeightedEntropy <= bestSplitInfo.calculateWeightedEntropy) {
             bestSplitInfo = currentSplitInfo
           }
         }

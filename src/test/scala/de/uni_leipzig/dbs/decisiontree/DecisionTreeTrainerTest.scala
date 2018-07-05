@@ -13,16 +13,17 @@ class DecisionTreeTrainerTest extends FlatSpec with Matchers {
   behavior of "a decision tree"
 
   it should "not throw an error" in {
-    val filepathTraining = URLDecoder.decode(getClass.getResource("/musicbrainz/training_musicbrainz_softTFIDF[1_5].csv").toURI.toString, "UTF-8")
+    val filepathTraining = URLDecoder.decode(getClass.getResource("/musicbrainzExt/training12").toURI.toString, "UTF-8")
+
     val env = ExecutionEnvironment.getExecutionEnvironment
-    val inputFull: DataSet[(Int, Int, Boolean, Double, Double, Double)] = env.readCsvFile(filepathTraining, fieldDelimiter = ";", ignoreFirstLine = true)
+    val inputFull: DataSet[(Int, Int, Boolean, Double, Double, Double, Double, Double, Double, Double)] = env.readCsvFile(filepathTraining, fieldDelimiter = ";", ignoreFirstLine = true)
     val input = inputFull
 
-    val data = input.map(t => (if (t._3) 1.0 else -1.0, Vector(t._4, t._5, t._6)))
+    val data = input.map(t => (if (t._3) 1.0 else -1.0, Vector(t._4, t._5, t._6, t._7, t._8, t._9, t._10)))
     val lfData = data.map(t => LabeledFeatures(t._1, t._2))
     val testFeatures = lfData.map(lf => lf.features)
 
-    val model = new DecisionTreeModel(minLeafSamples = 50)
+    val model = new DecisionTreeModel(minLeafSamples = 5)
     val lfDataTrainTest = Splitter.trainTestSplit(lfData, 0.2, false)
     val trainData = lfDataTrainTest.training.map(lf => (lf.label, lf.features))
     val testData = lfDataTrainTest.testing.map(lf => (lf.label, lf.features))

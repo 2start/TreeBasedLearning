@@ -73,7 +73,7 @@ class RandomForest(
   }
 
   def getFeatureAverageInformationGain(): java.util.Map[Int, Double] = {
-    model.getAverageFeatureInformationGain().asJava
+    model.getVariableImportances().asJava
   }
 
   def save(): Unit = {

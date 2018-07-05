@@ -29,7 +29,6 @@ trait Evaluatable {
     val recall = truePositives.toDouble / (truePositives + falseNegatives)
     val accuracy = (truePositives + trueNegatives).toDouble / (truePositives + trueNegatives + falseNegatives + falsePositives)
 
-
     (accuracy, precision, recall)
   }
 

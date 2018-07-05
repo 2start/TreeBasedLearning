@@ -75,7 +75,7 @@ class DecisionTree(
   }
 
   def save(): Unit = {
-    val oos = new ObjectOutputStream(new FileOutputStream("rfmodel"))
+    val oos = new ObjectOutputStream(new FileOutputStream("dtmodel"))
     oos.writeObject(this.model)
     oos.close()
   }

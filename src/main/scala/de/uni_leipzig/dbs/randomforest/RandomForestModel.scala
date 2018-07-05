@@ -8,6 +8,16 @@ import org.apache.flink.api.scala.extensions._
 import org.apache.flink.util.Collector
 //import org.apache.flink.api.scala.utils.DataSetUtils
 
+/***
+  * The model of the random forest algorithm.
+  *
+  * @param sampleFraction
+  * @param numTrees
+  * @param minImpurityDecrease
+  * @param minLeafSamples
+  * @param maxDepth
+  * @param featuresPerSplit
+  */
 class RandomForestModel(
                          val sampleFraction: Double = 0.05,
                          val numTrees: Int = 100,
@@ -16,8 +26,13 @@ class RandomForestModel(
                          val maxDepth: Int = Int.MaxValue,
                          val featuresPerSplit: Int = 1
                        ) extends Evaluatable with Serializable {
+ require(0.0 < sampleFraction && sampleFraction <= 1.0)
   var trees: List[Node] = _
 
+  /***
+    * Fits the random forest model to the data.
+    * @param data
+    */
   def fit(data: DataSet[LabeledFeatures]): Unit = {
     val dt = new DecisionTreeTrainer(minImpurityDecrease, minLeafSamples, featuresPerSplit, maxDepth)
     trees = data
@@ -30,6 +45,11 @@ class RandomForestModel(
       }).collect().toList
   }
 
+  /***
+    * Predicts a set of unlabeled data points. Requires to fit the model first.
+    * @param data represents the data that should be predicted.
+    * @return
+    */
   def predictLabeledFeatures(data: DataSet[Vector[Double]]): DataSet[LabeledFeatures] = {
     require(trees.nonEmpty)
     data.map(features => {
@@ -40,22 +60,27 @@ class RandomForestModel(
     })
   }
 
+  /***
+    * Predicts a set of unlabeled data points. Requires to fit the model first.
+    * @param data represents the data that should be predicted.
+    * @return
+    */
   // TODO change decision tree to accept LabeledFeatures instead of (label, features) then edit Evaluatable and remove this
   def predict(data: DataSet[Vector[Double]]): DataSet[(Double, Vector[Double])] = {
     predictLabeledFeatures(data).map(lv => (lv.label, lv.features))
   }
 
   /**
-    *
+    * A simple variable importance measure.
     * @return map from feature index to average information gain
     */
-  def getAverageFeatureInformationGain(): Map[Int, Double] = {
+  def getVariableImportances(): Map[Int, Double] = {
     /**
       *
       * @param node that represents the examined tree
       * @return featureIndices and impurity decrease for every non leaf node
       */
-    def getFeatureInformationGain(node: Node): List[(Int, Double)] = {
+    def getFeatureInformationGain(node: Node, totalCount: Int): List[(Int, Double)] = {
       if(node.split.isEmpty) {
         return Nil
       } else {
@@ -72,22 +97,23 @@ class RandomForestModel(
         val leftChildWeightedEntropy = leftChildCount/totalCount * leftChildEntropy
         val rightChildWeightedEntropy = rightChildCount/totalCount * rightChildEntropy
         val informationGain = entropy - leftChildWeightedEntropy - rightChildWeightedEntropy
+        val weightedInformationGain = node.stats.count.toDouble/totalCount * informationGain
 
-        return List((featureIndex, informationGain)) ++ getFeatureInformationGain(leftChild) ++ getFeatureInformationGain(rightChild)
+        return List((featureIndex, weightedInformationGain)) ++ getFeatureInformationGain(leftChild, totalCount) ++ getFeatureInformationGain(rightChild, totalCount)
 
       }
     }
 
     // calculates (feature index, average information gain) out of all nodes (feature index, information gain) tuples
-    trees
-      .flatMap(node => getFeatureInformationGain(node))
-      .map{case(featureIndex, informationGain) => (featureIndex, informationGain, 1)}
-      .groupBy{case(featureIndex, _, _) => featureIndex}
+    val featureImportanceMap = trees
+      .flatMap(node => getFeatureInformationGain(node, node.stats.count))
+      .groupBy{case(featureIndex, _) => featureIndex}
       .mapValues{groupedTuples => {
-        val featureInformationGains = groupedTuples.map{case(_, informationGain, _) => informationGain}
-        val featureCounts = groupedTuples.map{case(_, _, count) => count}
-        featureInformationGains.sum/featureCounts.sum
+        val featureInformationGains = groupedTuples.map{case(_, informationGain) => informationGain}
+        featureInformationGains.sum/trees.size.toDouble
       }}
+
+    return featureImportanceMap
   }
 }
 

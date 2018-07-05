@@ -5,18 +5,25 @@ import de.uni_leipzig.dbs.tree.{Node, NodeStatistics, Split, SplitInformation}
 import scala.collection.mutable
 import scala.util.Random
 
+/***
+  * Implements a simple serializable decision tree algorithm.
+  * @param minImpurityDecrease
+  * @param minLeafSamples
+  * @param featuresPerSplit
+  * @param maxDepth
+  */
 class DecisionTreeTrainer(
                            val minImpurityDecrease: Double = 0.0,
                            val minLeafSamples: Int = 1,
                            val featuresPerSplit: Int = 1,
                            val maxDepth: Int = Int.MaxValue
                          ) extends Serializable {
+
   /**
     *
     * @param valueLabelData a list of value, label tupels
     * @return threshold to split child data on
     */
-
   def getSplitInformation(feature: Int, valueLabelData: List[(Double, Double)]): SplitInformation = {
     val sortedValueLabelData = valueLabelData
       .sortBy{ case(value, label) => value}
